@@ -1,0 +1,322 @@
+{
+  "name": "DEMO - Telegram Chat",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {}
+      },
+      "id": "9556e546-7527-4798-a9a8-50d9cb18112d",
+      "name": "Telegram Trigger",
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.5,
+      "position": [
+        -80,
+        320
+      ],
+      "webhookId": "06dad7c4-6e09-4d5e-b934-f7c5b2fa802c",
+      "credentials": {
+        "telegramApi": {
+          "id": "TPRfxJCUmxOQR73w",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "chat-id",
+              "leftValue": "={{ String($json.message.chat.id) }}",
+              "rightValue": "1114473883",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "has-text",
+              "leftValue": "={{ $json.message.text }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "b19085cf-344e-4096-95d1-282673d039dd",
+      "name": "Solo mi chat",
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.3,
+      "position": [
+        224,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "sendChatAction",
+        "chatId": "={{ $json.message.chat.id }}"
+      },
+      "id": "e5706a38-95e1-4348-8122-25a66933b267",
+      "name": "Escribiendo...",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        448,
+        304
+      ],
+      "webhookId": "474527eb-8d91-4d06-aad3-f17b6b4a741d",
+      "credentials": {
+        "telegramApi": {
+          "id": "TPRfxJCUmxOQR73w",
+          "name": "Telegram account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Hora actual: {{ $now.setZone(\"America/Argentina/Buenos_Aires\").toFormat(\"yyyy-MM-dd HH:mm\") }} (Argentina) / {{ $now.toUTC().toISO() }} (UTC)\nMensaje del supervisor: {{ $('Telegram Trigger').item.json.message.text }}",
+        "options": {
+          "systemMessage": "Sos el asistente de planta de IoT Consulting. Te escribe un supervisor por Telegram.\nRespondé en castellano rioplatense, breve: máximo 5 líneas, texto plano, sin tablas, sin markdown y sin usar los caracteres < ni > (escribí \"más de\" / \"menos de\").\n\nHay dos dispositivos. Pasá siempre el device_id correcto a la herramienta leer_datos_tago.\n\n1) \"la extrusora de la línea 3\" (Machine01), device_id 6a2816d363c661000b317bb4. Si te preguntan por \"las máquinas\", \"la planta\" o \"la línea 3\", es esta.\nVariables (manda un dato cada 3 minutos aprox.):\n- temperature_ini = temperatura zona 1 (alimentación), en °F. Normal 183-200. Fuera de rango si supera 230 °F.\n- temperature_mid = temperatura zona 2, en °F. Normal 173-177.\n- temperature_end = temperatura zona 3 (cabezal), en °F. Fuera de rango si supera 210 °F.\n- pressure = presión, en psi. Fuera de rango si supera 4500 psi.\n- speed = velocidad del tornillo.\n- message_system = mensaje de estado de la máquina (ej. \"Pressure is high\"); traducilo al castellano.\nIgnorá las variables metadata, work_on y work_off.\n\n2) \"el monitor forzador\" (MonitorForzador01), device_id 6af8c5314b9b05000b57810a. Es un monitor con un modelo que clasifica el estado de la máquina. Variables:\n- clase = estado predicho por el modelo (la clase más probable).\n- prob_apagado = probabilidad de que esté apagada.\n- prob_velocidadmaxima = probabilidad de velocidad máxima.\n- prob_velocidadmaximaobstruida = probabilidad de velocidad máxima con obstrucción.\n- prob_velocidadminima = probabilidad de velocidad mínima.\nPara el estado actual usá last_value con variables \"clase,prob_apagado,prob_velocidadmaxima,prob_velocidadmaximaobstruida,prob_velocidadminima\". Informá la clase y su probabilidad; si la clase es velocidad máxima obstruida, mencionalo primero como alerta. No inventes umbrales: si no sabés si un valor es normal, decilo.\nSi la pregunta no aclara cuál, consultá la extrusora y, si tiene sentido, también el monitor.\n\nCómo consultar (herramienta leer_datos_tago, nunca inventes valores):\n- Estado actual: query \"last_value\" con las variables del dispositivo.\n- Últimas horas: query \"max\" (o \"min\") con start_date en UTC calculado desde la hora actual; o query \"aggregate\" con interval \"hour\", function \"max\" y start_date. Pedí pocos datos.\n- Eventos recientes de la extrusora: query \"default\", variables \"message_system\", start_date y qty 10.\n- Para un resumen de las últimas horas alcanza con una consulta last_value y una max.\n\nCómo responder:\n- Si algún valor está fuera de rango, mencionalo primero.\n- Indicá unidades y la hora del dato en hora de Argentina (UTC-3), formato HH:MM.\n- Si te piden algo que no podés saber con estos datos, decilo en una línea.",
+          "maxIterations": 6,
+          "enableStreaming": false
+        }
+      },
+      "id": "046259c0-98a6-4bff-82d1-424b81969da2",
+      "name": "Asistente de planta",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        672,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-3.5-flash-lite",
+        "options": {}
+      },
+      "id": "872767e0-1f23-4dd6-8312-91662ef2dadf",
+      "name": "Gemini Flash",
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        560,
+        544
+      ],
+      "credentials": {
+        "googlePalmApi": {
+          "id": "0YCIJ3HkAGlUKMqg",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "contextWindowLength": 10
+      },
+      "id": "67e9cf31-3adf-4c29-a822-7a49be42e512",
+      "name": "Memoria del chat",
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.4,
+      "position": [
+        720,
+        544
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $(\"Telegram Trigger\").item.json.message.chat.id }}",
+        "text": "={{ $json.output }}",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "HTML"
+        }
+      },
+      "id": "6b2d4f12-da16-4e1f-b83f-b0d624e22da6",
+      "name": "Responder en Telegram",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1008,
+        304
+      ],
+      "webhookId": "a562a1b3-58c8-4d32-a198-1f385e7171d9",
+      "credentials": {
+        "telegramApi": {
+          "id": "TPRfxJCUmxOQR73w",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## DEMO - Telegram Chat\nSolo responde al chat_id especificado.\nleer_datos_tago llama a read_device_data del MCP de TagoIO (tools/call) con device fijo Machine01. No se usa el MCP Client Tool porque Gemini rechaza su esquema.",
+        "height": 304,
+        "color": 4
+      },
+      "id": "d781a31e-c2e7-4884-ae82-fe89f2809336",
+      "name": "Sticky Note 298187d2",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        112,
+        448
+      ]
+    },
+    {
+      "parameters": {
+        "toolDescription": "Lee datos de los dispositivos en TagoIO a través del MCP de TagoIO (read_device_data). Dispositivos: 6a2816d363c661000b317bb4 (Machine01, extrusora) y 6af8c5314b9b05000b57810a (MonitorForzador01). Solo lectura.",
+        "method": "POST",
+        "url": "https://mcp.ai.tago.io",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Accept",
+              "value": "application/json, text/event-stream"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'tools/call', params: { name: 'read_device_data', arguments: { device_id: $fromAI('device_id', 'ID del dispositivo a consultar. Opciones: 6a2816d363c661000b317bb4 (Machine01, extrusora línea 3) o 6af8c5314b9b05000b57810a (MonitorForzador01). Por defecto 6a2816d363c661000b317bb4', 'string', '6a2816d363c661000b317bb4'), query: $fromAI('query', 'Tipo de consulta: last_value, max, min, aggregate o default', 'string'), variables: $fromAI('variables', 'Variables separadas por coma, ej: temperature_ini,temperature_end,pressure,speed', 'string').split(',').map(v => v.trim()).filter(v => v), start_date: $fromAI('start_date', 'Inicio en ISO 8601 UTC, ej 2026-10-27T13:00:00Z. Vacío para last_value', 'string', '') || undefined, interval: $fromAI('interval', 'Solo para aggregate: minute, hour o day. Vacío si no aplica', 'string', '') || undefined, function: $fromAI('function', 'Solo para aggregate: avg, max o min. Vacío si no aplica', 'string', '') || undefined, qty: $fromAI('qty', 'Cantidad de registros para default (máx 20). 0 si no aplica', 'number', 0) || undefined } } }) }}",
+        "options": {
+          "timeout": 20000
+        }
+      },
+      "id": "68a487ba-fd4f-4888-bdb4-fb4fcb4f7757",
+      "name": "leer_datos_tago",
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.5,
+      "position": [
+        880,
+        544
+      ],
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "UwxdIJkTwwd87Jie",
+          "name": "Bearer Auth account"
+        }
+      },
+      "notes": "Llama a read_device_data del MCP de TagoIO (JSON-RPC tools/call). Device fijo: Machine01. Solo lectura."
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "Solo mi chat",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Solo mi chat": {
+      "main": [
+        [
+          {
+            "node": "Escribiendo...",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Escribiendo...": {
+      "main": [
+        [
+          {
+            "node": "Asistente de planta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Asistente de planta": {
+      "main": [
+        [
+          {
+            "node": "Responder en Telegram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gemini Flash": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Asistente de planta",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Memoria del chat": {
+      "ai_memory": [
+        [
+          {
+            "node": "Asistente de planta",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "leer_datos_tago": {
+      "ai_tool": [
+        [
+          {
+            "node": "Asistente de planta",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": true
+  },
+  "versionId": "09684854-a821-414b-b9af-b7c9304bc14f",
+  "meta": {
+    "aiBuilderAssisted": true,
+    "builderVariant": "mcp",
+    "templateCredsSetupCompleted": true,
+    "instanceId": "be6da1100f551e4c852f64056381f220d5f5bfe1ee54b714c2af978bba325d77"
+  },
+  "nodeGroups": [],
+  "id": "G6aXDkSoGyyqkG6I",
+  "tags": []
+}
