@@ -101,6 +101,4 @@ docs/         # Ejemplo de payload a TagoIO y documentación adicional
 - La exactitud de la placa (int8) no se midió directamente; las métricas corresponden al modelo float32.
 - El agente es una experiencia de laboratorio, sin guardrails ni protección contra *prompt injection*.
 
-## Documentación
 
-Informe completo del proyecto: [Google Doc](https://docs.google.com/document/d/1p9obvaRN_wadg9u9ZzuKs3vWsua2rpLf327zNOCimb0/edit)
