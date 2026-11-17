@@ -78,8 +78,6 @@ Arduino Nano 33 BLE Sense Lite · Edge Impulse · PlatformIO · Python · TagoIO
 firmware/     # Código de la placa (PlatformIO) y librería exportada de Edge Impulse
 bridge/       # Script Python serie → MQTT → TagoIO
 n8n/          # Export JSON del workflow del agente y prompt de sistema
-data/         # Detalle del dataset y protocolo de captura
-docs/         # Ejemplo de payload a TagoIO y documentación adicional
 ```
 
 ## Puesta en marcha
