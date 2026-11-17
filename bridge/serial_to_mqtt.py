@@ -23,7 +23,7 @@ import time
 import paho.mqtt.client as mqtt
 import serial
 
-TOKEN = "6d714d22-f8f2-452f-9af3-187380c9d79f"
+TOKEN = "TAGO_TOKEN"
 
 
 def make_client(args, token):
